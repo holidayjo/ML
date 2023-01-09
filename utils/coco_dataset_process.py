@@ -16,6 +16,7 @@ def coco_to_yolo(bbox):
     return cxywh
     
 
+# Below is for saving images from COCO dataset selected only 'person' class. and saving labels in yolo format.
 '''
 #%% Setting config
 
