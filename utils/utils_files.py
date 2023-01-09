@@ -6,19 +6,13 @@ import cv2
 from multiprocessing import Pool
 
 
-def test_again():
-    print('Will this be synched???')
-    print('Will this be synched???')
-    pass
-    
-
-def crop_images(img_path, output_path, h1,h2,w1,w1): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
+def crop_images(img_path, output_path, h1,h2,w1,w2): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
     
     all_img_files = glob.glob(img_path + '/*.jpg')
     # print(all_img_files)
     for img in all_img_files:
         print(img)
-        crop_1image(img, output_path, h1,h2,w1,w1)
+        crop_1image(img, output_path, h1,h2,w1,w2)
     print('Finished!!!')
     
 
@@ -393,7 +387,7 @@ class utils_file:
         '''
         This function moves image files that doesn't contain any object from (or based on) txt files.
         If image doesn't have any object on the txt file, 
-        the function moves the image & txt files to the output folder.
+        the function moves the image & txt files to the output fMerge branch 'mlllaster' into test_brancholder.
         
         - label_folder : self.orig_folder  (orig_folder)
         - image_folder : containing images (sec_folder)        
