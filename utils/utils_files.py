@@ -5,16 +5,6 @@ import numpy as np
 import cv2
 from multiprocessing import Pool
 
- 
-def test():
-    print("Test")
-    print("Why this doens't show up in the website???")
-    print("2nd branch.")
-    print("the last print!!")
-    pass
-
-
-
 
 def crop_images(img_path, output_path, h1,h2,w1,w2): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
     
@@ -397,7 +387,7 @@ class utils_file:
         '''
         This function moves image files that doesn't contain any object from (or based on) txt files.
         If image doesn't have any object on the txt file, 
-        the function moves the image & txt files to the output folder.
+        the function moves the image & txt files to the output fMerge branch 'mlllaster' into test_brancholder.
         
         - label_folder : self.orig_folder  (orig_folder)
         - image_folder : containing images (sec_folder)        
