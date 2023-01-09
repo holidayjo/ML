@@ -7,6 +7,7 @@ from multiprocessing import Pool
 
  
 def test():
+    print("Test")
     pass
 
 
