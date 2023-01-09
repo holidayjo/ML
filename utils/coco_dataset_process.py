@@ -6,6 +6,10 @@ import fiftyone.zoo as foz
 import fiftyone.brain as fob
 from fiftyone import ViewField as F
 
+def define():
+    pass
+
+
 def coco_to_yolo(bbox):
     # print('bbox =', bbox)
     x = bbox[0] + bbox[2]/2
