@@ -1,4 +1,3 @@
-
 import os
 import glob
 import shutil
@@ -9,32 +8,30 @@ from multiprocessing import Pool
 
 
 
-def crop_images(img_path, output_path, crop_ratio=0.2):
+def crop_images(img_path, output_path, h1,h2,w1,w1): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
+    
     all_img_files = glob.glob(img_path + '/*.jpg')
     # print(all_img_files)
     for img in all_img_files:
         print(img)
-        crop_1image(img, output_path, crop_ratio)
+        crop_1image(img, output_path, h1,h2,w1,w1)
     print('Finished!!!')
     
 
-def crop_1image(image_path, out_path, crop_ratio):
+def crop_1image(image_path, out_path, ratio):
     '''
     crop ratio is the ratio from the top and left of the image to be removed from the orig img.
     '''
     
     img      = cv2.imread(image_path)
-    i_w = img.shape[1]
-    i_h = img.shape[0]
+    # i_w = img.shape[1]
+    # i_h = img.shape[0]
     
     base_name = os.path.basename(image_path)
+    # print(crop_ratio)
+    crop_img = img[h1:h2,w1:w1]
     
-    crop_img = img[int(i_h*crop_ratio):i_h, int(i_w*crop_ratio):i_w]
-    # cv2.imshow('cropped', crop_img)
-    # cv2.waitKey(0)
-    cropped_file = os.path.join(out_path, 'crop_{}'.format(base_name))
-    # print(cropped_file)
-    cv2.imwrite(cropped_file, crop_img)
+    
 
 def crop_1image_320(image_path, out_path, *crop_ratio):
     '''
@@ -288,7 +285,7 @@ class utils_file:
         self.sec_folder  = sec_folder
         self.thr_folder  = thr_folder
 
-    def counting_class(self, num_of_classes=2):
+    def counting_class(self, num_of_classes=3):
         '''
         This function counts the number of each class.
 
@@ -551,25 +548,27 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig       = r'D:\my_doc\safety_2022\dataset\221206\train\labels'
-    out        = r''
+    orig       = r'D:\my_doc\safety_2022\videos\paths\changdong\changdong4_path_south_221110_17_20\splitted\frames'
+    out        = r'D:\my_doc\safety_2022\videos\paths\changdong\changdong4_path_south_221110_17_20\splitted\frames\cropped'
     sec_folder = r''
     thr_folder = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=out, sec_folder=sec_folder, thr_folder=thr_folder)
-    
+    uf.crop_images(180, 1080, 0, 1920)
     # uf.moving_half_of_files(file_type_to_move='.jpg', skip_frame=3)
-    # uf.img_resize(resize_ratio=0.75)
+    # uf.img_resize()
     # uf.moving_same_name_file()
     # uf.moving_non_obj_files()
     
     # moving_half_of_files(orig, out)
-    uf.counting_class()
+    # uf.counting_class()
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
-    # uf.extract_frames_folder(60)
+    # uf.extract_frames_folder(120)
     
     # uf.review_n_move()
     # uf.moving_not_MF()
 
     # uf.moving_img_n_label()
+    # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
+    
