@@ -8,6 +8,8 @@ from multiprocessing import Pool
 
 def test_again():
     print('Will this be synched???')
+    print('Will this be synched???')
+    pass
     
 
 def crop_images(img_path, output_path, h1,h2,w1,w1): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
