@@ -8,7 +8,10 @@ from multiprocessing import Pool
  
 def test():
     print("Test")
+    print("Why this doens't show up in the website???")
+    print("2nd branch.")
     pass
+
 
 
 def crop_images(img_path, output_path, h1,h2,w1,w1): # ratio = h1:h2, w1:w2   , add "start_point, end_point," next time 
