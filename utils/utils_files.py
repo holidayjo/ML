@@ -49,6 +49,7 @@ def crop_1image_320(image_path, out_path, *crop_ratio):
     cv2.imwrite(cropped_file, crop_img)    
 
 
+
 def fps_check(video_file):
     '''
     video_file: ex) r'/media/hj/Docs/my_doc/safety_2022/videos/dongjak/dongjak4_221019_17_20/dongjak4_221019_17_20.mp4'
@@ -507,6 +508,16 @@ class utils_file:
                         elif word_num > 1:
                             break
 
+    def copy_coco_orig_img(self):
+        '''
+        I have selected only person class in the coco dataset. 
+        And I detected male and female classes.
+        Now I am going to reannotate them from the original images.
+        So I will move original images to the new folder and annotate them again.
+        '''
+        for file in os.listdir(self.orig_folder):
+            print(file)
+    
     def moving_img_n_label(self):
         '''
         I want to increase the accuracy with minimum dataset. So I am going to add add only FNs images and labels.
@@ -545,8 +556,8 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig       = r'D:\my_doc\safety_2022\videos\paths\changdong\changdong4_path_south_221110_17_20\splitted\frames'
-    out        = r'D:\my_doc\safety_2022\videos\paths\changdong\changdong4_path_south_221110_17_20\splitted\frames\cropped'
+    orig       = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked'
+    out        = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked/orig_imgs'
     sec_folder = r''
     thr_folder = r''
     
@@ -566,6 +577,6 @@ if __name__ == '__main__':
     # uf.review_n_move()
     # uf.moving_not_MF()
 
-    uf.moving_img_n_label()
+    uf.copy_coco_orig_img()
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
     
