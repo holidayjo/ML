@@ -516,7 +516,29 @@ class utils_file:
         So I will move original images to the new folder and annotate them again.
         '''
         for file in os.listdir(self.orig_folder):
-            print(file)
+            file_name, extension = os.path.splitext(file)
+            if extension == '.jpg':
+                    
+                orig_img = self.sec_folder+'/'+file
+                out_img  = self.dest_folder+'/'+file
+                
+                out_label  = self.dest_folder+'/'+file_name+'.txt'
+                orig_label = self.sec_folder+'/'+file_name+'.txt'
+                
+                print('orig_img =', orig_img)
+                # print(orig_label)
+                
+                # print(out_img)
+                # print(out_label)
+                
+                # break
+                shutil.copy(orig_img, out_img)
+                shutil.copy(orig_label, out_label)
+            else:
+                continue
+            
+                
+                
     
     def moving_img_n_label(self):
         '''
@@ -558,7 +580,7 @@ if __name__ == '__main__':
     
     orig       = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked'
     out        = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked/orig_imgs'
-    sec_folder = r''
+    sec_folder = r'/media/hj/Docs/my_doc/data/coco_persons/val'
     thr_folder = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=out, sec_folder=sec_folder, thr_folder=thr_folder)
@@ -579,4 +601,3 @@ if __name__ == '__main__':
 
     uf.copy_coco_orig_img()
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
-    
