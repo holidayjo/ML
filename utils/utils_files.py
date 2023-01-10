@@ -5,14 +5,6 @@ import numpy as np
 import cv2
 from multiprocessing import Pool
 
- 
-def test():
-    print("Test")
-    print("Why this doens't show up in the website???")
-    print("2nd branch.")
-    print("the last print!!")
-    pass
-
 
 
 
@@ -523,7 +515,7 @@ class utils_file:
         I want to increase the accuracy with minimum dataset. So I am going to add add only FNs images and labels.
         It moves all images in the folder and labels with respect to the image names.
         
-        It depends on the situation.
+        It depends on a situation.
         I changed the code so check the code and folder before using it.        
 
         self.orig_folder = images and labels are in the folder.
@@ -562,7 +554,7 @@ if __name__ == '__main__':
     thr_folder = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=out, sec_folder=sec_folder, thr_folder=thr_folder)
-    uf.crop_images(180, 1080, 0, 1920)
+    # uf.crop_images(180, 1080, 0, 1920)
     # uf.moving_half_of_files(file_type_to_move='.jpg', skip_frame=3)
     # uf.img_resize()
     # uf.moving_same_name_file()
@@ -577,6 +569,6 @@ if __name__ == '__main__':
     # uf.review_n_move()
     # uf.moving_not_MF()
 
-    # uf.moving_img_n_label()
+    uf.moving_img_n_label()
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
     
