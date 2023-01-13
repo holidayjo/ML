@@ -422,9 +422,10 @@ class utils_file:
             # print('image_file =', )
             if os.stat(orig_label).st_size != 0:
                 print(orig_label)
-                  
+                
+                shutil.move(image_full_path, img_dest_full_path)  
                 shutil.move(orig_label, dest_label)
-                shutil.move(image_full_path, img_dest_full_path)
+                
 
 
     def extract_frames_folder(self, frame_interval):
@@ -503,7 +504,7 @@ class utils_file:
                             if word != '0' and word != '1':#  or '1':
                                 # print(line)
                                 shutil.copy(org_label_path, dest_label_path)
-                                shutil.copy(org_img_path, dest_img_path)
+                                shutil.copy(org_img_path,   dest_img_path)
                                 break
                         elif word_num > 1:
                             break
@@ -578,9 +579,9 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig       = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked'
-    out        = r'/media/hj/Docs/my_doc/data/coco_persons/detected_MF/checked/orig_imgs'
-    sec_folder = r'/media/hj/Docs/my_doc/data/coco_persons/val'
+    orig       = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\labels'
+    out        = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
+    sec_folder = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\images'
     thr_folder = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=out, sec_folder=sec_folder, thr_folder=thr_folder)
@@ -588,7 +589,8 @@ if __name__ == '__main__':
     # uf.moving_half_of_files(file_type_to_move='.jpg', skip_frame=3)
     # uf.img_resize()
     # uf.moving_same_name_file()
-    # uf.moving_non_obj_files()
+    
+    uf.moving_non_obj_files()
     
     # moving_half_of_files(orig, out)
     # uf.counting_class()
@@ -599,5 +601,5 @@ if __name__ == '__main__':
     # uf.review_n_move()
     # uf.moving_not_MF()
 
-    uf.copy_coco_orig_img()
+    # uf.copy_coco_orig_img()
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
