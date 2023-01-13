@@ -276,7 +276,7 @@ def image_resize(img_path, out_path, resize_ratio=0.5):
 
        
 class utils_file:
-    def __init__(self, orig_folder, dest_folder, sec_folder, **thr_folder):
+    def __init__(self, orig_folder, dest_folder, sec_folder, thr_folder):
         
         self.orig_folder = orig_folder
         self.dest_folder = dest_folder
@@ -543,7 +543,8 @@ class utils_file:
     
     def moving_img_n_label(self):
         '''
-        I want to increase the accuracy with minimum dataset. So I am going to add add only FNs images and labels.
+        I want to increase the accuracy with minimum dataset.
+        So I am going to add add only FNs images and labels.
         It moves all images in the folder and labels with respect to the image names.
         
         It depends on a situation.
@@ -556,20 +557,23 @@ class utils_file:
             file_name, extension = os.path.splitext(file)                
             if extension == '.jpg':
                 # print(file_name, extension)
-                orig_img   = os.path.join(self.sec_folder, file_name) + '.jpg'
+                # print('self.thr_folder =', self.thr_folder['thr_folder'])
+                # print('file_name       =', file_name)
+                # print(os.path.join(self.thr_folder, file_name))
+                orig_img   = os.path.join(self.thr_folder, file_name) + '.jpg'
                 orig_label = os.path.join(self.sec_folder, file_name) + '.txt'
 
                 dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
                 dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
                 
-                # print(bool(orig_label))
+                print(bool(orig_label))
                 if os.path.exists(orig_label):
                     print('File exists.')
-                    shutil.move(orig_img, dest_img)
-                    shutil.move(orig_label, dest_label)
+                    shutil.copy(orig_img, dest_img)
+                    shutil.copy(orig_label, dest_label)
                 else:
                     print("Label doesn't exists.")
-                    shutil.move(orig_img, dest_img)
+                    shutil.copy(orig_img, dest_img)
 
 
 
@@ -579,27 +583,37 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig       = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\labels'
-    out        = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
-    sec_folder = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\images'
-    thr_folder = r''
+    orig        = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
+    dest_folder = r'C:\Users\NVR\Desktop\orig2'
+    sec_folder  = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
+    thr_folder  = r'D:\my_doc\safety_2022\videos\sinsuldong\splitted_sinsuldong_230110_10_13\frames_all'
     
-    uf = utils_file(orig_folder=orig, dest_folder=out, sec_folder=sec_folder, thr_folder=thr_folder)
+    uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
+    
     # uf.crop_images(180, 1080, 0, 1920)
+    
     # uf.moving_half_of_files(file_type_to_move='.jpg', skip_frame=3)
+    
     # uf.img_resize()
+    
     # uf.moving_same_name_file()
     
-    uf.moving_non_obj_files()
+    # uf.moving_non_obj_files()
     
     # moving_half_of_files(orig, out)
+    
     # uf.counting_class()
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
+    
     # uf.extract_frames_folder(120)
     
     # uf.review_n_move()
+    
     # uf.moving_not_MF()
 
     # uf.copy_coco_orig_img()
+    
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
+    
+    uf.moving_img_n_label()
