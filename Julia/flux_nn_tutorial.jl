@@ -10,7 +10,8 @@ truth = [xor(col[1]>0.5, col[2]>0.5) for col in eachcol(noisy)]
 model = Chain(
     Dense(2 => 3, tanh), # activation funtion inside the layer
     BatchNorm(3),
-    Dense(3 => 2),
+    Dense(3 => 6, tanh),
+    Dense(6 => 2),
     softmax) |> gpu # move model to GPU, if available
 
 # The model encapsulates parameters, ramdomly initialised. Its initial output is:
@@ -24,9 +25,9 @@ optim = Flux.setup(Flux.Adam(0.01), model)
 
 # Training loop, using the whole dataset 1000 times:
 losses = []
-@showprogress for epoch in 1:1_000
+@showprogress for epoch in 1:100
     for (x, y) in loader
-        loss, grad = Flux.withgradient(model) do m
+        loss, grads = Flux.withgradient(model) do m
             # Evaluate model and loss inside gradient context
             y_hat = m(x)
             Flux.crossentropy(y_hat, y)
@@ -37,8 +38,21 @@ losses = []
 end
 
 optim
-out2 = modek(noisy |> gpu |> cpu) # first row is prob of true, second row p(false)
+out2 = model(noisy |> gpu) |> cpu # first row is prob of true, second row p(false)
 
-mean((out2[1,:] .> 0.5) .==truth) # accuracy 94% so far!
+mean((out2[1,:] .> 0.5) .==truth) # accuracy 97.4% so far!
+
+using Plots # to draw the above figure
+
+p_true = scatter(noisy[1,:], noisy[2,:], zcolor=truth, title="True classification", legend=false)
+p_raw  = scatter(noisy[1,:], noisy[2,:], zcolor=out1[1,:], title="Untrained Network", label="", clim=(0,1))
+p_raw  = scatter(noisy[1,:], noisy[2,:], zcolor=out1[1,:], title="Untrained Network", label="", clim=(0,1))
+p_done = scatter(noisy[1,:], noisy[2,:], zcolor=out2[1,:], title="trained Network", legend=false)
+
+plot(p_true, p_raw, p_done, layout=(1,3), size=(1000,330))
 
 
+# Here is the loss during training:
+plot(losses; xaxis=(:log10, "iteration"), yaxis="loss", label="per batch")
+n = length(loader)
+plot!(n:n:length(losses), mean.(Iterators.partition(losses, n)), label="epoch mean", dpi=200)
