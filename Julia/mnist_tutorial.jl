@@ -10,6 +10,6 @@ function foo(data, origin)
 end
 
 p = foo(cars, "USA")
-p |> save("foo.png")
+# p |> save("foo.png")
 
 # so far, I have made very simple dataset process.
