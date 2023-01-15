@@ -1,3 +1,6 @@
-# This is from the home pc.
-using Pkg
-Pkg.add("Flux")
+## This is from the home pc.
+
+# # import libraries
+# using Pkg
+# Pkg.add("Flux")
+
