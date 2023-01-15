@@ -23,8 +23,22 @@ loader = Flux.DataLoader((noisy, target) |> gpu, batchsize=64, shuffle=true);
 optim = Flux.setup(Flux.Adam(0.01), model)
 
 # Training loop, using the whole dataset 1000 times:
-# losses = []
-# @showprogress for epoch in 1:1_000
-#     for (x, y) in loader
-#         loss, grad = Flux.withgradient(model) do m
-#             # Evaluate model and loss inside gradient context
+losses = []
+@showprogress for epoch in 1:1_000
+    for (x, y) in loader
+        loss, grad = Flux.withgradient(model) do m
+            # Evaluate model and loss inside gradient context
+            y_hat = m(x)
+            Flux.crossentropy(y_hat, y)
+        end
+        Flux.update!(optim, model, grads[1])
+        push!(losses, loss)
+    end
+end
+
+optim
+out2 = modek(noisy |> gpu |> cpu) # first row is prob of true, second row p(false)
+
+mean((out2[1,:] .> 0.5) .==truth) # accuracy 94% so far!
+
+
