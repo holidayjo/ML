@@ -430,7 +430,7 @@ class utils_file:
 
     def extract_frames_folder(self, frame_interval):
         output_path = os.path.join(self.orig_folder, 'frames')
-        # print(path)
+        
         for file in os.listdir(self.orig_folder):
             file_name, extension = os.path.splitext(file)
             # print(file)
@@ -440,7 +440,7 @@ class utils_file:
             if extension == '.avi' or '.mp4':
                 print('!!!!!!!!!!!')
                 each_vid = os.path.join(self.orig_folder, file)
-                print(each_vid)
+                print('each_vid =', each_vid)
                 extract_frames_1video(each_vid, frame_interval, self.dest_folder)
         print('Whole files finished!')
         
@@ -464,7 +464,7 @@ class utils_file:
             dest_img   = os.path.join(self.dest_folder, file_name+'.jpg')
             dest_label = os.path.join(self.dest_folder, file_name+'.txt')
             
-            shutil.copy(orig_label, dest_label)
+            # shutil.copy(orig_label, dest_label)
             shutil.copy(orig_img, dest_img)
         print('Finished!!!')
         # for img in all_img_files:
@@ -574,19 +574,31 @@ class utils_file:
                 else:
                     print("Label doesn't exists.")
                     shutil.copy(orig_img, dest_img)
-
-
-
-                            
-                        
-                    
+    
+    def move_from_file_name(self, extension):
+        """
+        It moves images and labels by reading any file name with specific extension in the folder.
+        It also can select folders of files we want to move from, and label folder.
+        """
+        for file in os.listdir(self.orig_folder):
+            file_name, ext = os.path.splitext(file)
+            if ext == extension:
+                # print(file_name)
+                orig_img   = os.path.join(self.sec_folder, file_name) + '.jpg'
+                orig_label = os.path.join(self.thr_folder, file_name) + '.txt'
+                
+                dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
+                dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
+                
+                
+    
     
 if __name__ == '__main__':
     
-    orig        = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
-    dest_folder = r'C:\Users\NVR\Desktop\orig2'
-    sec_folder  = r'D:\my_doc\github\Python\g_cls_win\runs\detect\exp3\dest'
-    thr_folder  = r'D:\my_doc\safety_2022\videos\sinsuldong\splitted_sinsuldong_230110_10_13\frames_all'
+    orig        = r'C:\Users\NVR\Desktop\dest'
+    dest_folder = r'C:\Users\NVR\Desktop\dest1'
+    sec_folder  = r'C:\Users\NVR\Desktop\dest'
+    thr_folder  = r'C:\Users\NVR\Desktop\dest'
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
@@ -606,8 +618,10 @@ if __name__ == '__main__':
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
     
-    # uf.extract_frames_folder(120)
+    # uf.extract_frames_folder(100)
     
+    uf.move_from_file_name(extension='.jpg')
+        
     # uf.review_n_move()
     
     # uf.moving_not_MF()
@@ -616,4 +630,4 @@ if __name__ == '__main__':
     
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
     
-    uf.moving_img_n_label()
+    # uf.moving_img_n_label()
