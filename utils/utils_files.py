@@ -587,10 +587,19 @@ class utils_file:
                 orig_img   = os.path.join(self.sec_folder, file_name) + '.jpg'
                 orig_label = os.path.join(self.thr_folder, file_name) + '.txt'
                 
+                print('orig_label =', orig_label)
                 dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
                 dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
                 
-                
+                if os.path.exists(orig_img):
+                    print('Image exists.')
+                    shutil.copy(orig_img, dest_img)
+                    if os.path.exists(orig_label):
+                        print('Label exists.')                
+                        shutil.copy(orig_label, dest_label)
+                else:
+                    print("Both Image and Label don't exists.")
+                    
     
     
 if __name__ == '__main__':
