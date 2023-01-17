@@ -283,7 +283,7 @@ class utils_file:
         self.sec_folder  = sec_folder
         self.thr_folder  = thr_folder
 
-    def counting_class(self, num_of_classes=3):
+    def counting_class(self, num_of_classes=2):
         '''
         This function counts the number of each class.
 
@@ -420,7 +420,7 @@ class utils_file:
             # print('from :', orig_label)
             # print('to   :', dest_label)
             # print('image_file =', )
-            if os.stat(orig_label).st_size != 0:
+            if os.stat(orig_label).st_size == 0:
                 print(orig_label)
                 
                 shutil.move(image_full_path, img_dest_full_path)  
@@ -604,10 +604,10 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig        = r'C:\Users\NVR\Desktop\dest'
-    dest_folder = r'C:\Users\NVR\Desktop\dest1'
-    sec_folder  = r'C:\Users\NVR\Desktop\dest'
-    thr_folder  = r'C:\Users\NVR\Desktop\dest'
+    orig        = r'D:\my_doc\safety_2022\dataset\230117\jongno'
+    dest_folder = r''
+    sec_folder  = r''
+    thr_folder  = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
@@ -623,13 +623,13 @@ if __name__ == '__main__':
     
     # moving_half_of_files(orig, out)
     
-    # uf.counting_class()
+    uf.counting_class()
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
     
     # uf.extract_frames_folder(100)
     
-    uf.move_from_file_name(extension='.jpg')
+    # uf.move_from_file_name(extension='.jpg')
         
     # uf.review_n_move()
     
