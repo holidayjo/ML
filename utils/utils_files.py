@@ -604,10 +604,10 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig        = r'/home/hj/Desktop/checked_train'
-    dest_folder = r'/home/hj/Desktop/img_and_label'
-    sec_folder  = r'/media/hj/Docs/my_doc/data/coco_persons/train'  # img
-    thr_folder  = r'/media/hj/Docs/my_doc/data/coco_persons/train'  # label
+    orig        = r'D:\my_doc\safety_2022\videos\jongno3\jongno3_machine\splitted'
+    dest_folder = r'D:\my_doc\safety_2022\videos\jongno3\jongno3_machine\splitted\frames'
+    sec_folder  = r''  # img
+    thr_folder  = r''  # label
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
@@ -627,12 +627,12 @@ if __name__ == '__main__':
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
     
-    # uf.extract_frames_folder(100)
+    uf.extract_frames_folder(60)
     
-    uf.move_from_file_name(extension='.jpg') # This would be frequently used.
-        
+    # uf.move_from_file_name(extension='.jpg') # This would be frequently used.
+
     # uf.review_n_move()
-    
+
     # uf.moving_not_MF()
 
     # uf.copy_coco_orig_img()
