@@ -26,7 +26,7 @@ def crop_1image(image_path, out_path, ratio):
     
     base_name = os.path.basename(image_path)
     # print(crop_ratio)
-    crop_img = img[h1:h2,w1:w1]
+    # crop_img = img[h1:h2,w1:w1]
     
     
 
@@ -385,9 +385,11 @@ class utils_file:
 
     def moving_non_obj_files(self):
         '''
-        This function moves image files that doesn't contain any object from (or based on) txt files.
+        This function moves image files that doesn't contain any object based on (or based on) txt files.
         If image doesn't have any object on the txt file, 
         the function moves the image & txt files to the output fMerge branch 'mlllaster' into test_brancholder.
+        Note that when we have output detected from the yolo model, it contains txt files only for images that has at least an object.
+        so, we can then use moving_img_n_lalel function below.
         
         - label_folder : self.orig_folder  (orig_folder)
         - image_folder : containing images (sec_folder)        
@@ -417,9 +419,10 @@ class utils_file:
             orig_label = os.path.join(self.orig_folder, label)
             dest_label = os.path.join(self.dest_folder, label)
                        
-            # print('from :', orig_label)
+            print('from :', orig_label)
             # print('to   :', dest_label)
             # print('image_file =', )
+            print("size = ", os.stat(orig_label).st_size)
             if os.stat(orig_label).st_size == 0:
                 print(orig_label)
                 
@@ -541,39 +544,75 @@ class utils_file:
                 
                 
     
-    def moving_img_n_label(self):
+    def moving_img_n_label(self, based_on_label=False):
         '''
         I want to increase the accuracy with minimum dataset.
-        So I am going to add add only FNs images and labels.
+        So I am going to add only FNs images and labels.
         It moves all images in the folder and labels with respect to the image names.
         
+        When I selected images that the model falsely detected male or female from the detected result images,
+        I need to move those images and matching labels from original images and labels.
+        Then finally, I correct them to add to a train dataset.
+                
         It depends on a situation.
         I changed the code so check the code and folder before using it.        
-
-        self.orig_folder = images and labels are in the folder.
-        self.dest_folder = dest
+        
+        if not based_on_label:
+            self.orig_folder = images and labels are in the folder.
+            self.dest_folder = dest
+        if based_on_label:
+            self.orig_folder = images
+            self.dest_folder = output.
+            self.thr_folder  = orig images
+            self.sec_folder  = orig labels
+        
+        
         '''
-        for file in os.listdir(self.orig_folder):
-            file_name, extension = os.path.splitext(file)                
-            if extension == '.jpg':
-                # print(file_name, extension)
-                # print('self.thr_folder =', self.thr_folder['thr_folder'])
-                # print('file_name       =', file_name)
-                # print(os.path.join(self.thr_folder, file_name))
-                orig_img   = os.path.join(self.thr_folder, file_name) + '.jpg'
-                orig_label = os.path.join(self.sec_folder, file_name) + '.txt'
-
-                dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
-                dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
+        
+        if not based_on_label: # based on images.
+            for file in os.listdir(self.orig_folder):
+                file_name, extension = os.path.splitext(file)                
+                if extension == '.jpg':
+                    # print(file_name, extension)
+                    # print('self.thr_folder =', self.thr_folder['thr_folder'])
+                    # print('file_name       =', file_name)
+                    # print(os.path.join(self.thr_folder, file_name))
+                    orig_img   = os.path.join(self.thr_folder, file_name) + '.jpg'
+                    orig_label = os.path.join(self.sec_folder, file_name) + '.txt'
+    
+                    dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
+                    dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
+                    
+                    print(bool(orig_label))
+                    if os.path.exists(orig_label):
+                        print('File exists.')
+                        shutil.copy(orig_img, dest_img)
+                        shutil.copy(orig_label, dest_label)
+                    else:
+                        print("Label doesn't exists.")
+                        shutil.copy(orig_img, dest_img)
+        else:
+            for file in os.listdir(self.orig_folder):
+                file_name, extension = os.path.splitext(file)
+                if extension == '.txt':
+                    print(file)
+                    orig_img   = os.path.join(self.orig_folder, file_name) + '.jpg'
+                    orig_label = os.path.join(self.orig_folder, file_name) + '.txt'
+    
+                    dest_img   = os.path.join(self.dest_folder, file_name) + '.jpg'
+                    dest_label = os.path.join(self.dest_folder, file_name) + '.txt'
+                    
+                    print(bool(orig_label))
+                    if os.path.exists(orig_label):
+                        print('File exists.')
+                        shutil.copy(orig_img, dest_img)
+                        shutil.copy(orig_label, dest_label)
+                    else:
+                        print("Label doesn't exists.")
+                        shutil.copy(orig_img, dest_img)
+                    
                 
-                print(bool(orig_label))
-                if os.path.exists(orig_label):
-                    print('File exists.')
-                    shutil.copy(orig_img, dest_img)
-                    shutil.copy(orig_label, dest_label)
-                else:
-                    print("Label doesn't exists.")
-                    shutil.copy(orig_img, dest_img)
+                            
     
     def move_from_file_name(self, extension):
         """
@@ -616,14 +655,14 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig        = r'D:\data\data\PennFudanPed\PNGImages'
-    dest_folder = r'D:\data\data\PennFudanPed\PNGImages\jpg'
-    sec_folder  = r''  # img
-    thr_folder  = r''  # label
+    orig        = r'C:\Users\user\Desktop\final_images'
+    dest_folder = r'C:\Users\user\Desktop\final2'
+    sec_folder  = r'C:\Users\user\Desktop\exp3'  # img
+    thr_folder  = r'C:\Users\user\Desktop\exp3'  # label
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
-    uf.png_to_jpg()
+    # uf.png_to_jpg()
     
     # uf.crop_images(180, 1080, 0, 1920)
     
@@ -633,7 +672,7 @@ if __name__ == '__main__':
     
     # uf.moving_same_name_file()
     
-    # uf.moving_non_obj_files()
+    # uf.moving_non_obj_files()  
     
     # moving_half_of_files(orig, out)
     
@@ -653,4 +692,4 @@ if __name__ == '__main__':
     
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
     
-    # uf.moving_img_n_label()
+    uf.moving_img_n_label(based_on_label=False)
