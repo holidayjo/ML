@@ -600,16 +600,30 @@ class utils_file:
                 else:
                     print("Both Image and Label don't exists.")
                     
-    
+    def png_to_jpg(self):
+        for file in os.listdir(self.orig_folder):
+            file_name, ext = os.path.splitext(file)
+            if ext == ".png":
+                file_read  = os.path.join(self.orig_folder,file)
+                file_write = os.path.join(self.dest_folder,file_name+ ".jpg")
+                # print(file_write)
+                img = cv2.imread(file_read)
+                cv2.imwrite(file_write, img)
+                
+                
+            
+        
     
 if __name__ == '__main__':
     
-    orig        = r'D:\my_doc\safety_2022\videos\jongno3\jongno3_machine\splitted'
-    dest_folder = r'D:\my_doc\safety_2022\videos\jongno3\jongno3_machine\splitted\frames'
+    orig        = r'D:\data\data\PennFudanPed\PNGImages'
+    dest_folder = r'D:\data\data\PennFudanPed\PNGImages\jpg'
     sec_folder  = r''  # img
     thr_folder  = r''  # label
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
+    
+    uf.png_to_jpg()
     
     # uf.crop_images(180, 1080, 0, 1920)
     
@@ -627,7 +641,7 @@ if __name__ == '__main__':
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
     
-    uf.extract_frames_folder(60)
+    # uf.extract_frames_folder(60)
     
     # uf.move_from_file_name(extension='.jpg') # This would be frequently used.
 
