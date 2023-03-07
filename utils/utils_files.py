@@ -657,8 +657,8 @@ if __name__ == '__main__':
     
     orig        = r'C:\Users\user\Desktop\final_images'
     dest_folder = r'C:\Users\user\Desktop\final2'
-    sec_folder  = r'C:\Users\user\Desktop\exp3'  # img
-    thr_folder  = r'C:\Users\user\Desktop\exp3'  # label
+    sec_folder  = r'C:\Users\user\Desktop\exp3'  
+    thr_folder  = r'D:\safety_2022\videos\cheongnyangni\cheongnyangni_gate_230105_12_15\splitted\frames' 
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
