@@ -655,10 +655,10 @@ class utils_file:
     
 if __name__ == '__main__':
     
-    orig        = r'C:\Users\user\Desktop\final_images'
-    dest_folder = r'C:\Users\user\Desktop\final2'
-    sec_folder  = r'C:\Users\user\Desktop\exp3'  
-    thr_folder  = r'D:\safety_2022\videos\cheongnyangni\cheongnyangni_gate_230105_12_15\splitted\frames' 
+    orig        = r'D:\safety_2022\videos\sinsuldong\for_fine_tune\20230312_1900_2106\splitted\using'
+    dest_folder = r'D:\safety_2022\videos\sinsuldong\for_fine_tune\20230312_1900_2106\splitted\frames'
+    sec_folder  = r''
+    thr_folder  = r''
     
     uf = utils_file(orig_folder=orig, dest_folder=dest_folder, sec_folder=sec_folder, thr_folder=thr_folder)
     
@@ -680,7 +680,7 @@ if __name__ == '__main__':
     
     # fps_check(r'D:\my_doc\safety_2022\videos\platform\euljiro\splitted\euljiro_20221101_17_20_000.mp4')
     
-    # uf.extract_frames_folder(60)
+    uf.extract_frames_folder(10)
     
     # uf.move_from_file_name(extension='.jpg') # This would be frequently used.
 
@@ -692,4 +692,4 @@ if __name__ == '__main__':
     
     # crop_1image(r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\jegidong_shutter_20221205_13_16_000_000060.jpg', r'D:\my_doc\safety_2022\videos\jegidong\jegidong_shutter_20221205_13_16\splitted\frames_crop')
     
-    uf.moving_img_n_label(based_on_label=False)
+    # uf.moving_img_n_label(based_on_label=False)
