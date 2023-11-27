@@ -920,37 +920,37 @@ class utils_file:
         all_images = glob.glob(self.orig_folder + '/*.jpg')
         all_labels = glob.glob(self.thr_folder + '/*.txt')
         
-        # line_num = 0
-        # # opening file.
-        # with open(label_file, 'r') as file4line:
-            
-        #     # reding each line    
-        #     for line in file4line:
-        #         # print('line =', line)
-        #         line_num += 1
-                
-        #         word_num = 0
-                
-        #         # readng 1st word (class in yolo format)
-        #         for word in line.split():
-        #             word_num += 1
-
-        #             if word_num != 1:
-        #                 break
-                               
-        #             # looping each class
-        #             for cls_num in classes:
-        #                 # print('cls_num =', cls_num)
-        #                 if word == str(classes[cls_num]):
-        #                     num_class[cls_num] += 1
-        
         for i, label in enumerate(all_labels):
-            print(i, label)
+            # print(i, label)
             base_name      = os.path.basename(label)
             only_file_name = os.path.splitext(base_name)[0]
-            print(only_file_name)
-            break
-        
+            # print(only_file_name)
+            image_path = os.path.join(self.orig_folder, only_file_name+'.jpg')
+            image      = cv2.imread(image_path)
+            
+            # print(image)
+            
+            line_num = 0
+            # opening file.
+            with open(label, 'r') as file4line:
+                
+                # reding each line    
+                for line in file4line:
+                    print('line =', line)
+                    line_num += 1
+                    
+                    this_line  = line.split()
+                    cls_label  = int(this_line[0])
+                    x_cen, y_cen, width, height = map(float, this_line[1:])
+                    # print(cls_label,x,y,w,h)
+                    
+                    if cls_label == 0: # falling.
+                        x, y, w, h = int((x_cen - width / 2) * image.shape[1]), int((y_cen - height / 2) * image.shape[0]), int(width * image.shape[1]), int(height * image.shape[0])
+                        print(x,y,w,h)
+                        cropped_obj = image[y:y+h, x:x+w]
+                        out_file_name = os.path.join(self.dest_folder, only_file_name + '_' + str(line_num) + '.jpg')
+                        print(out_file_name)
+                        cv2.imwrite(out_file_name, cropped_obj)
         
     
     def mix_img(self, where2put='bottom'):
@@ -1111,10 +1111,10 @@ class utils_file:
 
 if __name__ == '__main__':
     
-    orig        = r'C:\Users\ossam\Desktop\annotating\kisa_final_extracted_recycle_20231123\detected\just_labeling'
-    dest_folder = r'C:\Users\ossam\Desktop\annotating\kisa_final_extracted_recycle_20231123\orig\just_labeling'
-    sec_folder  = r'C:\Users\ossam\Desktop\annotating\kisa_final_test_data_20231101\all_frames'
-    thr_folder  = r'C:\Users\ossam\Desktop\annotating\labels'
+    orig        = r'D:\Seoulmetro\safety_2022\KISA_certification\dataset\training_dataset\dataset_231128\train\images'
+    dest_folder = r'C:\Users\ossam\Desktop\annotating\final_images\right'
+    sec_folder  = r'C:\Users\ossam\Desktop\annotating\cropped_obj_selected\right'
+    thr_folder  = r''
     
     # orig        = r'C:\Users\ossam\OneDrive\Desktop\willbeadded\FPs_empty\both'
     # dest_folder = r'C:\Users\ossam\OneDrive\Desktop\willbeadded\FPs_empty\orig_both'
@@ -1139,7 +1139,7 @@ if __name__ == '__main__':
     
     # moving_half_of_files(orig, out)
     
-    # uf.counting_class()
+    uf.counting_class()
         
     # fps_check(r'D:\Github\DUP\dataset\cropped.mp4')
     
@@ -1165,8 +1165,8 @@ if __name__ == '__main__':
     # uf.moving_non_obj_files()
     # uf.renamer(remove_letter='_orig')
     # uf.move_from_file_name(extension='.jpg') # This would be frequently used.
-    uf.crop_object()
-    # uf.mix_img(where2put='left')     # patching obj image to the orig img.
+    # uf.crop_object()
+    # uf.mix_img(where2put='right')     # patching obj image to the orig img.
     
     
     # uf.img_resize()
