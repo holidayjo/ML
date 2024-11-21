@@ -1,0 +1,12 @@
+* train_udp_orig _ not finished yet. *
+python /home/holidayj/Desktop/yolov7_udp/train.py --workers 20 --device 0 --batch-size 50 --data /home/holidayj/Desktop/yolov7_udp/data/udp.yaml --img 320 320 --cfg /home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7-tiny.yaml --hyp /home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.tiny_udp.yaml --project /home/holidayj/Desktop/yolov7_udp/runs/train
+
+* train_udp_modified _ not finished yet. *
+python /home/holidayj/Desktop/yolov7_udp/train.py --workers 20 --device 0 --batch-size 50 --data /home/holidayj/Desktop/yolov7_udp/data/udp.yaml --img 320 320 --cfg /home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7-tiny_modify.yaml --hyp /home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.tiny_udp.yaml --project /home/holidayj/Desktop/yolov7_udp/runs/train
+
+* train *
+python /home/holidayj/Desktop/yolov7_udp/train.py --workers 20 --device 0 --batch-size 50 --data /home/holidayj/Desktop/yolov7_udp/data/coco.yaml --img 320 320 --cfg /home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7-tiny_modify.yaml --hyp /home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.tiny.yaml --project /home/holidayj/Desktop/yolov7_udp/runs/train
+
+* train_yolov7x *
+python /home/holidayj/Desktop/yolov7_udp/train.py --workers 20 --device 0 --batch-size 50 --data /home/holidayj/Desktop/yolov7_udp/data/coco.yaml --img 640 640 --cfg /home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7x.yaml --hyp /home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.p5.yaml --project /home/holidayj/Desktop/yolov7_udp/runs/train
+
