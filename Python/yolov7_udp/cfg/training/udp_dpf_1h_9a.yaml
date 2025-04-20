@@ -1,0 +1,74 @@
+# parameters
+nc: 3  # number of classes
+depth_multiple: 1.0  # model depth multiple
+width_multiple: 1.0  # layer channel multiple
+
+# anchors
+anchors:
+  - [48,82,  36,157,  57,114,  85,77,  61,156,  67,182,  83,181,  126,121,  107,157]  # P3/8
+
+# yolov7-tiny backbone
+backbone:
+  # [from, number, module, args] c2, k=1, s=1, p=None, g=1, act=True
+  [
+   [-1, 1, Conv, [64, 3, 2, None, 1, nn.LeakyReLU(0.1)]],  # 1-P2/4
+   [-1, 1, MP, []],  # 6-P3/8
+   [-1, 1, Conv, [32, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [32, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2], 1, Concat, [1]],
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 5
+   
+   [-1, 1, MP, []],  # 6-P3/8
+   
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [64, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2], 1, Concat, [1]],
+   [-1, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 10
+   
+   [-1, 1, MP, []],  # 11-P4/16
+   [-1, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [128, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2], 1, Concat, [1]],
+   
+   [-1, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 15
+   
+   [-1, 1, MP, []],  # 17-P5/32
+   [-1, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+  ]
+
+# yolov7-tiny head
+head:
+  [[-1, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-2, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, SP, [5]],
+   [-2, 1, SP, [9]],
+   [-3, 1, SP, [13]],
+   [[-1, -2, -3, -4], 1, Concat, [1]],
+   [-1, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -7], 1, Concat, [1]],
+   [-1, 1, Conv, [256, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 37
+  
+   [-1, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [15, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]], # route backbone P4
+   [[-1, -2], 1, Concat, [1]],
+   
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [64, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2], 1, Concat, [1]],
+   [-1, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 47
+  
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [10, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]], # route backbone P3
+   [[-1, -2], 1, Concat, [1]],
+   
+   [-1, 1, Conv, [32, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [32, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2], 1, Concat, [1]],
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 43
+      
+   [42, 1, Conv, [128, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+
+   [[43], 1, IDetect, [nc, anchors]],   # Detect(P3, P4, P5)
+  ]
