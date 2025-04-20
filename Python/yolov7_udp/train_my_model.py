@@ -21,6 +21,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+import pytorch_model_summary
 import test  # import test.py to get mAP after each epoch
 from models.experimental import attempt_load
 from models.yolo import Model
@@ -41,9 +42,11 @@ logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None):
+    print("start of train function")
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, opt.freeze
+    
 
     # Directories
     wdir = save_dir / 'weights'
@@ -60,8 +63,9 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Configure
     plots = not opt.evolve  # create plots
-    cuda = device.type != 'cpu'
+    cuda  = device.type != 'cpu'
     init_seeds(2 + rank)
+    
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     is_coco = opt.data.endswith('coco.yaml')
@@ -69,12 +73,14 @@ def train(hyp, opt, device, tb_writer=None):
     # Logging- Doing this before checking the dataset. Might update data_dict
     loggers = {'wandb': None}  # loggers dict
     if rank in [-1, 0]:
+        print("0-2-1. rank is in [-1, 0]:") # True.
         opt.hyp          = hyp  # add hyperparameters
         run_id           = torch.load(weights, map_location=device).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
         wandb_logger     = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         data_dict        = wandb_logger.data_dict
-        if wandb_logger.wandb:
+        if wandb_logger.wandb: # False for now.
+            print("wandb_logger.wandb: = True")
             weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # WandbLogger might update weights, epochs if resuming
 
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
@@ -83,19 +89,26 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Model
     pretrained = weights.endswith('.pt')
+    print("1-1-1. pretrained =", pretrained)
     if pretrained:
+        print("pretrained!!")
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt       = torch.load(weights, map_location=device)  # load checkpoint
         model      = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        
         exclude    = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
         model.load_state_dict(state_dict, strict=False)  # load
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
+        print("1-1-2. Not pretrained. Loading Model.")
         model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
-
+        print("1-2. Model loaded.")
+        
+    print(pytorch_model_summary.summary(model, torch.zeros(1, 3,320,320), show_input=True))
+        
     # print("data_dict =", data_dict) # data_dict = {'train': '/home/holidayj/Desktop/coco_dataset_yolo_format/train', 'val': '/home/holidayj/Desktop/coco_dataset_yolo_format/val', 'nc': 3, 'names': ['U', 'D', 'P']}
     with torch_distributed_zero_first(rank): # This is to ensure that certain steps, like dataset checking, are only executed once in distributed training mode (typically rank 0).
                                              # To prevent multiple GPUs from redundantly checking the dataset in parallel.
@@ -114,6 +127,11 @@ def train(hyp, opt, device, tb_writer=None):
         # print("v.shape =", v.shape, ", v.requires_grad =", v.requires_grad) #
         
         v.requires_grad = True  # train all layers
+        # to see the parameters.
+        # print("k      =", k)
+        # print("v.data =", v.data)
+        
+        
         if any(x in k for x in freeze):
             print('freezing %s' % k)
             v.requires_grad = False
@@ -139,7 +157,32 @@ def train(hyp, opt, device, tb_writer=None):
         # ii +=1
         # print("ii =", ii)
         # if ii > 2:
-        #     print("v =", v)
+        #     print("v =", v) #   # ii = 253
+                            #     # v = Conv2d(128, 24, kernel_size=(1, 1), stride=(1, 1))
+                            #     # ii = 254
+                            #     # v = Conv2d(256, 24, kernel_size=(1, 1), stride=(1, 1))
+                            #     # ii = 255
+                            #     # v = Conv2d(512, 24, kernel_size=(1, 1), stride=(1, 1))
+                            #     # ii = 256
+                            #     # v = ModuleList(
+                            #     #   (0-2): 3 x ImplicitA()
+                            #     # )
+                            #     # ii = 257
+                            #     # v = ImplicitA()
+                            #     # ii = 258
+                            #     # v = ImplicitA()
+                            #     # ii = 259
+                            #     # v = ImplicitA()
+                            #     # ii = 260
+                            #     # v = ModuleList(
+                            #     #   (0-2): 3 x ImplicitM()
+                            #     # )
+                            #     # ii = 261
+                            #     # v = ImplicitM()
+                            #     # ii = 262
+                            #     # v = ImplicitM()
+                            #     # ii = 263
+                            #     # v = ImplicitM()
         
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter): # BatchNorm2d layer has a bias attribute.
             # print("hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter)")
@@ -272,8 +315,8 @@ def train(hyp, opt, device, tb_writer=None):
         del ckpt, state_dict
 
     # Image sizes
-    gs = max(int(model.stride.max()), 32)  # grid size (max stride)
-    nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
+    gs                = max(int(model.stride.max()), 32)  # grid size (max stride)
+    nl                = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
     imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # DP mode
@@ -286,34 +329,39 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Using SyncBatchNorm()')
 
     # Trainloader
-    print("From here, data loader!!!")
+    # print("From here, data loader!!!")
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
-    print("dataloader       =", dataloader)
-    print("type(dataloader) =", type(dataloader))
-    # print("type(dataloader[0]) =", type(dataloader[0]))
-    print("dir(dataloader)  =", dir(dataloader))
-    print("len(dataloader)  =", len(dataloader)) # 16 for batch size 350, and 1050 when a batch is 5??? what is it???
-    first_batch = next(iter(dataloader))
-    for batch in dataloader:
-        print("type(first_batch) =", type(first_batch))
-        print("len(first_batch)  =", len(first_batch))
-        print("len(batch)        =", len(batch))
-        images, labels, path, _temp = batch
-        print("batch[0].shape    =", batch[0].shape)  # Should give you (batch_size, 3, 320, 320)
-        print("batch[1].shape    =", batch[1].shape) # [13, 6]: [img_num, cls, x,y,w,h]
-        print("batch[2][0]       =", batch[2][0])    # image path
-        print("batch[3][4]       =", batch[3][4])
-        break  # Exit after the first batch to avoid printing too much
-    #print("dataloader.img =", dataloader.img[0].shape)
-    # Using next() to get the first batch
+    # print("dataloader       =", dataloader)
+    # print("type(dataloader) =", type(dataloader))
+    # # print("type(dataloader[0]) =", type(dataloader[0]))
+    # print("dir(dataloader)  =", dir(dataloader))
+    # print("len(dataloader)  =", len(dataloader)) # 16 for batch size 350, and 1050 when a batch is 5??? what is it???
+    # first_batch = next(iter(dataloader))
+    # for batch in dataloader:
+    #     print("type(first_batch) =", type(first_batch))
+    #     print("len(first_batch)  =", len(first_batch))
+    #     print("len(batch)        =", len(batch))
+    #     images, labels, path, _temp = batch
+    #     print("images.shape      = {}".format(images.shape)) # torch.Size([5, 3, 320, 320])
+    #     print("batch[0].shape    =", batch[0].shape)         # Should give you (batch_size, 3, 320, 320)
+    #     print("batch[1].shape    =", batch[1].shape)         # [13, 6]: [img_num, cls, x,y,w,h]
+    #     print("batch[2][0]       =", batch[2][0])            # image path
+    #     print("batch[3][4]       =", batch[3][4])
+    #     print("type(labels)      =", type(labels))
+    #     print("labels.shape      =", labels.shape)
+    #     # print(labels) # tensor([[0.00000,   0.00000, 0.53532, 0.03918, 0.15028, 0.07836],
+    #     #               #          batch_num, class,   bbox        
+    #     break  # Exit after the first batch to avoid printing too much
+    # #print("dataloader.img =", dataloader.img[0].shape)
+    # # Using next() to get the first batch
     
-    print("type(dataset)  =", type(dataset))
-    print("dir(dataset)   =", dir(dataset))
-    print("len(dataset)   =", len(dataset))
-    print("dataset.labels =", dataset.labels[0]) 
+    # print("type(dataset)  =", type(dataset))
+    # print("dir(dataset)   =", dir(dataset))
+    # print("len(dataset)   =", len(dataset))
+    # print("dataset.labels =", dataset.labels[0]) 
     
     # print(dataset.labels)
     
@@ -323,6 +371,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Process 0
     if rank in [-1, 0]:
+        # print("rank in [-1, 0]:")
         testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
                                         hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
                                         world_size=opt.world_size, workers=opt.workers,
@@ -339,10 +388,15 @@ def train(hyp, opt, device, tb_writer=None):
                     tb_writer.add_histogram('classes', c, 0)
 
             # Anchors
+            # print("opt.noautoanchor =", opt.noautoanchor)
             if not opt.noautoanchor:
+            # if opt.noautoanchor:
+                # print("if opt.noautoanchor:")
+                # print("check_autoanchors start!@!")
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+                
             model.half().float()  # pre-reduce anchor precision
-
+"""
     # DDP mode
     if cuda and rank != -1:
         model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank,
@@ -363,23 +417,32 @@ def train(hyp, opt, device, tb_writer=None):
     # print("next(model.parameters()).device =", next(model.parameters()).device) # gpu enabled.
 
     # Start training
-    t0 = time.time()
-    nw = max(round(hyp['warmup_epochs'] * nb), 1000)  # number of warmup iterations, max(3 epochs, 1k iterations)
+    t0                   = time.time()
+    nw                   = max(round(hyp['warmup_epochs'] * nb), 1000)  # number of warmup iterations, max(3 epochs, 1k iterations)
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
-    maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    maps                 = np.zeros(nc)  # mAP per class
+    results              = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = amp.GradScaler(enabled=cuda)
-    compute_loss_ota = ComputeLossOTA(model)  # init loss class
-    compute_loss = ComputeLoss(model)  # init loss class
+    scaler               = torch.amp.GradScaler("cuda", enabled=cuda)    # amp.GradScaler(enabled=cuda)
+    
+    
+    print("2-2. compute_loss_ota loading")
+    compute_loss_ota     = ComputeLossOTA(model)  # init loss class
+    print("2-2. compute_loss_ota loaded. The type is {}\n".format(type(compute_loss_ota)))
+    
+    print("3-1. compute_loss loading \n")
+    compute_loss         = ComputeLoss(model)  # init loss class
+    print("4-2. compute_loss loaded. The type is {}. But it will be not used.\n".format(type(compute_loss)))
+    
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
+    
     torch.save(model, wdir / 'init.pt')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
-        print(f"{epoch} epoch")
+        # print(f"{epoch} epoch")
 
         # Update image weights (optional)
         if opt.image_weights:
@@ -408,7 +471,8 @@ def train(hyp, opt, device, tb_writer=None):
             pbar = tqdm(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
-            print(f"i = {i}.")
+                                                   # pbar = enumerate(dataloader)
+            # print(f"i = {i}.")
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
 
@@ -432,16 +496,26 @@ def train(hyp, opt, device, tb_writer=None):
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Forward
-            with amp.autocast(enabled=cuda):
+            # print("Forward!!")
+            with torch.amp.autocast("cuda", enabled=cuda):
                 pred = model(imgs)  # forward
-                if 'loss_ota' not in hyp or hyp['loss_ota'] == 1: # default. We can change it in hyp config setting.
+                # print("\ntype(pred) =", type(pred))
+                # print("len(pred)    =", len(pred), "3-list of each level grid cell.")
+                # print("pred[0].shape", pred[0].shape) # batch, anchors, grid, grid, (class, obj_score, x,y,w,h)
+                # print("pred[1].shape", pred[1].shape)
+                # print("pred[2].shape", pred[2].shape)
+                if 'loss_ota' not in hyp or hyp['loss_ota'] == 1: # default. 1. 0 for faster train.
+                                                                  # We can change it in hyp config setting.
+                    print("\n5. loss ota. So, compute_loss_ota is being used.")
                     loss, loss_items = compute_loss_ota(pred, targets.to(device), imgs)  # loss scaled by batch_size
+                    print("6. loss ota done.")
                 else:
                     loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
                 if opt.quad:
                     loss *= 4.
+                print("6. break.")
             break
         break
     #         # Backward
@@ -580,7 +654,7 @@ def train(hyp, opt, device, tb_writer=None):
     #                                       save_json=True,
     #                                       plots=False,
     #                                       is_coco=is_coco,
-    #                                       v5_metrlen(ic=opt.v5_metric)
+    #                                       v5_metrlenic=opt.v5_metric)
 
     #     # Strip optimizers
     #     final = best if best.exists() else last  # final model
@@ -598,24 +672,28 @@ def train(hyp, opt, device, tb_writer=None):
     #     dist.destroy_process_group()
     # torch.cuda.empty_cache()
     # return results
-
+"""
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='/home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7-tiny_modify.yaml', help='model.yaml path')
+    # parser.add_argument('--cfg', type=str, default='/home/holidayj/Desktop/yolov7_udp/cfg/training/udp_dpf_3h_9a.yaml', help='model.yaml path')
+    parser.add_argument('--cfg', type=str, default='/home/holidayj/Desktop/yolov7_udp/cfg/training/udp_v7tiny_3h_12a.yaml', help='model.yaml path')
+
+    # parser.add_argument('--cfg', type=str, default='/home/holidayj/Desktop/yolov7_udp/cfg/training/yolov7-tiny.yaml', help='model.yaml path')
     # parser.add_argument('--data', type=str, default='/home/holidayj/Desktop/yolov7_udp/data/coco.yaml', help='data.yaml path')
     parser.add_argument('--data', type=str, default='/home/holidayj/Desktop/yolov7_udp/data/udp.yaml', help='data.yaml path')    
     parser.add_argument('--hyp', type=str,  default='/home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.tiny_udp.yaml', help='hyperparameters path')
+    # parser.add_argument('--hyp', type=str,  default='/home/holidayj/Desktop/yolov7_udp/data/hyp.scratch.tiny.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=5, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
-    # parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
-    parser.add_argument('--noautoanchor', action='store_false', help='disable autoanchor check')
+    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
+    # parser.add_argument('--noautoanchor', action='store_false', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
@@ -641,9 +719,9 @@ if __name__ == '__main__':
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone of yolov7=50, first3=0 1 2')
     parser.add_argument('--v5-metric', action='store_true', help='assume maximum recall as 1.0 in AP calculation')
     opt = parser.parse_args()
-
+    
     # Set DDP variables
-    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
+    opt.world_size  = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
     #if opt.global_rank in [-1, 0]:
