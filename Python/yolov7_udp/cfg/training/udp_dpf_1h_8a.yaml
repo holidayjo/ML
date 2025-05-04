@@ -5,7 +5,7 @@ width_multiple: 1.0  # layer channel multiple
 
 # anchors
 anchors:
-  - [48,82,  36,157,  57,114,  85,77,  61,156,  67,182,  83,181,  126,121,  107,157]
+  - [46,87,  39,159,  59,119,  93,78,  61,164,  73,186,  114,135,  95,173]  # P3/8
 
 # yolov7-tiny backbone
 backbone:

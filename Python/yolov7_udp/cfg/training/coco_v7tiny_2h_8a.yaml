@@ -5,8 +5,9 @@ width_multiple: 1.0  # layer channel multiple
 
 # anchors
 anchors:
-  - [66,157]
-  
+  - [47,89,  83,81,  38,179,  58,122]
+  - [63,164,  72,183,  116,137,  92,186]
+
 # yolov7-tiny backbone
 backbone:
   # [from, number, module, args] c2, k=1, s=1, p=None, g=1, act=True
@@ -81,8 +82,20 @@ head:
    [-1, 1, Conv, [32, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
    [[-1, -2, -3, -4], 1, Concat, [1]],
    [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 57
-         
+   
+   [-1, 1, Conv, [128, 3, 2, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, 47], 1, Concat, [1]],
+   
+   [-1, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-2, 1, Conv, [64, 1, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [64, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [-1, 1, Conv, [64, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [[-1, -2, -3, -4], 1, Concat, [1]],
+   [-1, 1, Conv, [128, 1, 1, None, 1, nn.LeakyReLU(0.1)]],  # 65
+   
+      
    [57, 1, Conv, [128, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
+   [65, 1, Conv, [256, 3, 1, None, 1, nn.LeakyReLU(0.1)]],
 
-   [[-1], 1, IDetect, [nc, anchors]],   # Detect(P3, P4, P5)
+   [[-2, -1], 1, IDetect, [nc, anchors]],   # Detect(P3, P4, P5)
   ]
