@@ -11,3 +11,6 @@ For clairity, we need to define the annotation rule first.
 
 3) Passing
    * the rest of them
+
+4) passenger above of the smoke barrier is not annotated since it is not clear to classify.
+
