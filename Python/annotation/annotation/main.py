@@ -22,7 +22,7 @@ elif(sys.version_info[0] == 3):
     from tkinter import messagebox as tkMessageBox
     from tkinter import filedialog
 
-MAIN_COLORS = ['red','blue','black','yellow','green','darkolivegreen', 'darkseagreen', 'darkorange', 'darkslategrey', 'darkturquoise', 'darkgreen', 'darkviolet', 'darkgray', 'darkmagenta', 'darkblue', 'darkkhaki','darkcyan', 'darkred',  'darksalmon', 'darkslategray', 'darkgoldenrod', 'darkgrey', 'darkslateblue', 'darkorchid','skyblue','orange','pink','violet','brown','gold','Olive','Maroon', 'cyan','olivedrab', 'lightcyan', 'silver']
+MAIN_COLORS = ['red','blue','yellow','green','darkolivegreen', 'darkseagreen', 'darkorange', 'darkslategrey', 'darkturquoise', 'darkgreen', 'darkviolet', 'darkgray', 'darkmagenta', 'darkblue', 'darkkhaki','darkcyan', 'darkred',  'darksalmon', 'darkslategray', 'darkgoldenrod', 'darkgrey', 'darkslateblue', 'darkorchid','skyblue','orange','pink','violet','brown','gold','Olive','Maroon', 'cyan','olivedrab', 'lightcyan', 'silver'] # 'black',
 print(type(MAIN_COLORS))
 home  = getenv("HOME")
 # image sizes for the examples
@@ -31,7 +31,7 @@ SIZE = 256, 256
 classes = []
 
 try:
-    with open('classes.txt','r') as cls:
+    with open('annotation/classes.txt','r') as cls:
         classes = cls.readlines()
     classes = [cls.strip() for cls in classes]
 except IOError as io:
@@ -265,36 +265,85 @@ class LabelTool():
         print('Image No. %d saved' %(self.cur))
 
 
+
     def mouseClick(self, event):
-        if self.STATE['click'] == 0:
-            self.STATE['x'], self.STATE['y'] = event.x, event.y
+        # FIX: Clamp x and y to be inside the image dimensions
+        if self.tkimg:
+            x_constrained = max(0, min(event.x, self.tkimg.width()))
+            y_constrained = max(0, min(event.y, self.tkimg.height()))
         else:
-            x1, x2 = min(self.STATE['x'], event.x), max(self.STATE['x'], event.x)
-            y1, y2 = min(self.STATE['y'], event.y), max(self.STATE['y'], event.y)
+            return # Safety check if no image is loaded
+
+        if self.STATE['click'] == 0:
+            self.STATE['x'], self.STATE['y'] = x_constrained, y_constrained
+        else:
+            # Use the constrained coordinates for the second click as well
+            x1, x2 = min(self.STATE['x'], x_constrained), max(self.STATE['x'], x_constrained)
+            y1, y2 = min(self.STATE['y'], y_constrained), max(self.STATE['y'], y_constrained)
+            
             self.bboxList.append((x1, y1, x2, y2))
             self.bboxListCls.append(self.cur_cls_id)
             self.bboxIdList.append(self.bboxId)
             self.bboxId = None
             self.listbox.insert(END, '(%d, %d) -> (%d, %d) -> (%s)' %(x1, y1, x2, y2, classes[self.cur_cls_id]))
             self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[self.cur_cls_id])
+        
         self.STATE['click'] = 1 - self.STATE['click']
+        
+    # def mouseClick(self, event):
+    #     if self.STATE['click'] == 0:
+    #         self.STATE['x'], self.STATE['y'] = event.x, event.y
+    #     else:
+    #         x1, x2 = min(self.STATE['x'], event.x), max(self.STATE['x'], event.x)
+    #         y1, y2 = min(self.STATE['y'], event.y), max(self.STATE['y'], event.y)
+    #         self.bboxList.append((x1, y1, x2, y2))
+    #         self.bboxListCls.append(self.cur_cls_id)
+    #         self.bboxIdList.append(self.bboxId)
+    #         self.bboxId = None
+    #         self.listbox.insert(END, '(%d, %d) -> (%d, %d) -> (%s)' %(x1, y1, x2, y2, classes[self.cur_cls_id]))
+    #         self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[self.cur_cls_id])
+    #     self.STATE['click'] = 1 - self.STATE['click']
 
     def mouseMove(self, event):
-        self.disp.config(text = 'x: %.3d, y: %.3d' %(event.x, event.y))
+        # FIX: Clamp x and y to be inside the image dimensions for visual feedback
         if self.tkimg:
+            x_constrained = max(0, min(event.x, self.tkimg.width()))
+            y_constrained = max(0, min(event.y, self.tkimg.height()))
+            
+            self.disp.config(text = 'x: %.3d, y: %.3d' %(x_constrained, y_constrained))
+            
+            # Draw crosshairs
             if self.hl:
                 self.mainPanel.delete(self.hl)
-            self.hl = self.mainPanel.create_line(0, event.y, self.tkimg.width(), event.y, width = 2)
+            self.hl = self.mainPanel.create_line(0, y_constrained, self.tkimg.width(), y_constrained, width = 2)
             if self.vl:
                 self.mainPanel.delete(self.vl)
-            self.vl = self.mainPanel.create_line(event.x, 0, event.x, self.tkimg.height(), width = 2)
-        if 1 == self.STATE['click']:
-            if self.bboxId:
-                self.mainPanel.delete(self.bboxId)
-            self.bboxId = self.mainPanel.create_rectangle(self.STATE['x'], self.STATE['y'], \
-                                                            event.x, event.y, \
-                                                            width = 2, \
-                                                            outline = COLORS[self.cur_cls_id])
+            self.vl = self.mainPanel.create_line(x_constrained, 0, x_constrained, self.tkimg.height(), width = 2)
+            
+            # Draw the temporary box while dragging
+            if 1 == self.STATE['click']:
+                if self.bboxId:
+                    self.mainPanel.delete(self.bboxId)
+                self.bboxId = self.mainPanel.create_rectangle(self.STATE['x'], self.STATE['y'], \
+                                                                x_constrained, y_constrained, \
+                                                                width = 2, \
+                                                                outline = COLORS[self.cur_cls_id])
+    # def mouseMove(self, event):
+    #     self.disp.config(text = 'x: %.3d, y: %.3d' %(event.x, event.y))
+    #     if self.tkimg:
+    #         if self.hl:
+    #             self.mainPanel.delete(self.hl)
+    #         self.hl = self.mainPanel.create_line(0, event.y, self.tkimg.width(), event.y, width = 2)
+    #         if self.vl:
+    #             self.mainPanel.delete(self.vl)
+    #         self.vl = self.mainPanel.create_line(event.x, 0, event.x, self.tkimg.height(), width = 2)
+    #     if 1 == self.STATE['click']:
+    #         if self.bboxId:
+    #             self.mainPanel.delete(self.bboxId)
+    #         self.bboxId = self.mainPanel.create_rectangle(self.STATE['x'], self.STATE['y'], \
+    #                                                         event.x, event.y, \
+    #                                                         width = 2, \
+    #                                                         outline = COLORS[self.cur_cls_id])
 
     def cancelBBox(self, event):
         if 1 == self.STATE['click']:
