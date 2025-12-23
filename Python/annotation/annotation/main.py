@@ -203,6 +203,18 @@ class LabelTool():
         # get image list
         self.imageDir = os.path.join(r'./Images', '%s' %(self.category))
         self.imageList = glob.glob(os.path.join(self.imageDir, '*.jpg'))
+        
+        # --- NEW CODE START ---
+        # Sort images numerically based on the frame number at the end of the file
+        # Assumes format: "something_frame_183060.jpg"
+        try:
+            self.imageList.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0].split('_')[-1]))
+        except ValueError:
+            print("Warning: Could not sort numerically. Falling back to alphabetical sort.")
+            self.imageList.sort()
+        # --- NEW CODE END ---
+        
+        
         if len(self.imageList) == 0:
             print('No .jpg images found in the specified dir!')
             tkMessageBox.showerror("Error!", message = "No .jpg images found in the specified dir!")
