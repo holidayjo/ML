@@ -31,7 +31,7 @@ SIZE = 256, 256
 classes = []
 
 try:
-    with open('annotation/classes.txt','r') as cls:
+    with open('classes.txt','r') as cls:
         classes = cls.readlines()
     classes = [cls.strip() for cls in classes]
 except IOError as io:
@@ -125,9 +125,23 @@ class LabelTool():
         self.listbox.grid(row = 3, column = 2, sticky = N,columnspan=2)
         self.btnDel = Button(self.frame, text = 'Delete', command = self.delBBox)
         self.btnDel.grid(row = 4, column = 2, sticky = W+E+N,columnspan=2)
+        
+        # --- NEW CODE START ---
+        self.btnChange = Button(self.frame, text = 'Change Class', command = self.changeBBoxClass)
+        self.btnChange.grid(row = 5, column = 2, sticky = W+E+N, columnspan=2)
+        self.parent.bind("c", self.changeBBoxClass) # Hotkey 'c' to change class
+        # --- NEW CODE END ---
+
         self.btnClear = Button(self.frame, text = 'ClearAll', command = self.clearBBox)
         self.btnClear.grid(row = 5, column = 2, sticky = W+E+N,columnspan=2)
-
+        
+        # --- NEW CODE START ---
+        # Instructions Label
+        instructions = "How to use:\n1. Select box in list\n2. Press 'c' to Change Class\n3. Press 'Delete' to Remove"
+        self.instrLabel = Label(self.frame, text = instructions, fg = 'blue', justify=LEFT)
+        self.instrLabel.grid(row = 7, column = 2, sticky = W+E+N, columnspan=2)
+        # --- NEW CODE END ---
+        
         # control panel for image navigation
         self.ctrPanel = Frame(self.frame)
         self.ctrPanel.grid(row = 6, column = 1, columnspan = 2, sticky = W+E)
@@ -236,9 +250,16 @@ class LabelTool():
     def loadImage(self):
         # load image
         imagepath = self.imageList[self.cur - 1]
+        
+        # --- NEW CODE START ---
+        print(f"Loading: {imagepath}")  # Prints the full path to the console
+        # --- NEW CODE END ---
+
         self.img = PImage.open(imagepath)
         self.curimg_w, self.curimg_h = self.img.size
         self.tkimg = ImageTk.PhotoImage(self.img)
+        
+        # ... rest of the function remains the same ...
         self.mainPanel.config(width = max(self.tkimg.width(), 400), height = max(self.tkimg.height(), 400))
         self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
         self.progLabel.config(text = "%04d/%04d" %(self.cur, self.total))
@@ -266,6 +287,40 @@ class LabelTool():
                     self.bboxIdList.append(tmpId)
                     self.listbox.insert(END, '(%d, %d) -> (%d, %d) -> (%s)' %(tmp[0], tmp[1], tmp[2], tmp[3], classes[int(yolo_data[0])]))
                     self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[int(yolo_data[0])])
+                    
+    # def loadImage(self):
+    #     # load image
+    #     imagepath = self.imageList[self.cur - 1]
+    #     self.img = PImage.open(imagepath)
+    #     self.curimg_w, self.curimg_h = self.img.size
+    #     self.tkimg = ImageTk.PhotoImage(self.img)
+    #     self.mainPanel.config(width = max(self.tkimg.width(), 400), height = max(self.tkimg.height(), 400))
+    #     self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
+    #     self.progLabel.config(text = "%04d/%04d" %(self.cur, self.total))
+
+    #     # load labels
+    #     self.clearBBox()
+    #     # self.imagename = os.path.split(imagepath)[-1].split('.')[0]
+    #     self.imagename = os.path.splitext(os.path.basename(imagepath))[0]
+    #     labelname = self.imagename + '.txt'
+    #     self.labelfilename = os.path.join(self.outDir, labelname)
+    #     bbox_cnt = 0
+    #     if os.path.exists(self.labelfilename):
+    #         with open(self.labelfilename) as f:
+    #             for (i, line) in enumerate(f):
+    #                 yolo_data = line.strip().split()
+    #                 # print(yolo_data)
+    #                 tmp = self.deconvert(yolo_data[1:])
+    #                 self.bboxList.append(tuple(tmp))
+    #                 self.bboxListCls.append(yolo_data[0])
+    #                 tmpId = self.mainPanel.create_rectangle(tmp[0], tmp[1], \
+    #                                                         tmp[2], tmp[3], \
+    #                                                         width = 2, \
+    #                                                         outline = COLORS[int(yolo_data[0])])
+                    
+    #                 self.bboxIdList.append(tmpId)
+    #                 self.listbox.insert(END, '(%d, %d) -> (%d, %d) -> (%s)' %(tmp[0], tmp[1], tmp[2], tmp[3], classes[int(yolo_data[0])]))
+    #                 self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[int(yolo_data[0])])
         
     def saveImage(self):
         with open(self.labelfilename, 'w') as f:
@@ -375,6 +430,37 @@ class LabelTool():
         print(self.bboxListCls,idx)
         self.bboxListCls.pop(idx)
         self.listbox.delete(idx)
+        
+    def changeBBoxClass(self, event=None):
+        # 1. Check if an item is selected in the listbox
+        sel = self.listbox.curselection()
+        if len(sel) != 1:
+            return
+        idx = int(sel[0])
+        
+        # 2. Update the class in the data list to the current dropdown selection
+        # self.cur_cls_id is the index of the class currently shown in the dropdown
+        self.bboxListCls[idx] = self.cur_cls_id 
+        
+        # 3. Update the visual rectangle color on the image
+        self.mainPanel.itemconfig(self.bboxIdList[idx], outline=COLORS[self.cur_cls_id])
+        
+        # 4. Update the text in the listbox
+        # We need to reconstruct the string: "(x1, y1) -> (x2, y2) -> (ClassName)"
+        x1, y1, x2, y2 = self.bboxList[idx]
+        new_text = '(%d, %d) -> (%d, %d) -> (%s)' % (x1, y1, x2, y2, classes[self.cur_cls_id])
+        
+        # Delete old text and insert new text
+        self.listbox.delete(idx)
+        self.listbox.insert(idx, new_text)
+        
+        # Set the text color to match the new class color
+        self.listbox.itemconfig(idx, fg=COLORS[self.cur_cls_id])
+        
+        # Keep the item selected so you can see the change
+        self.listbox.select_set(idx)
+        
+        print(f"Changed box {idx} to class: {classes[self.cur_cls_id]}")
 
     def clearBBox(self):
         for idx in range(len(self.bboxIdList)):
