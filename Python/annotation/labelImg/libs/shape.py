@@ -83,7 +83,7 @@ class Shape(object):
 
     def set_open(self):
         self._closed = False
-
+        
     def paint(self, painter):
         if self.points:
             color = self.select_line_color if self.selected else self.line_color
@@ -103,16 +103,54 @@ class Shape(object):
 
             for i, p in enumerate(self.points):
                 line_path.lineTo(p)
-                self.draw_vertex(vertex_path, i)
+                # ---------------------------------------------------
+                # CHANGE 1: Comment out the line below
+                # self.draw_vertex(vertex_path, i)
+                # ---------------------------------------------------
+                
             if self.is_closed():
                 line_path.lineTo(self.points[0])
 
             painter.drawPath(line_path)
-            painter.drawPath(vertex_path)
-            painter.fillPath(vertex_path, self.vertex_fill_color)
+            
+            # ---------------------------------------------------
+            # CHANGE 2: Comment out the two lines below
+            # painter.drawPath(vertex_path)
+            # painter.fillPath(vertex_path, self.vertex_fill_color)
+            # ---------------------------------------------------
 
             # Draw text at the top-left
             if self.paint_label:
+
+                # def paint(self, painter):
+                #     if self.points:
+                #         color = self.select_line_color if self.selected else self.line_color
+                #         pen = QPen(color)
+                #         # Try using integer sizes for smoother drawing(?)
+                #         pen.setWidth(max(1, int(round(2.0 / self.scale))))
+                #         painter.setPen(pen)
+
+                #         line_path = QPainterPath()
+                #         vertex_path = QPainterPath()
+
+                #         line_path.moveTo(self.points[0])
+                #         # Uncommenting the following line will draw 2 paths
+                #         # for the 1st vertex, and make it non-filled, which
+                #         # may be desirable.
+                #         # self.drawVertex(vertex_path, 0)
+
+                #         for i, p in enumerate(self.points):
+                #             line_path.lineTo(p)
+                #             self.draw_vertex(vertex_path, i)
+                #         if self.is_closed():
+                #             line_path.lineTo(self.points[0])
+
+                #         painter.drawPath(line_path)
+                #         painter.drawPath(vertex_path)
+                #         painter.fillPath(vertex_path, self.vertex_fill_color)
+
+                #         # Draw text at the top-left
+                #         if self.paint_label:
                 min_x = sys.maxsize
                 min_y = sys.maxsize
                 min_y_label = int(1.25 * self.label_font_size)
