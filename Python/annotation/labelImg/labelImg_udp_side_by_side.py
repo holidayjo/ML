@@ -151,6 +151,15 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create and add combobox for showing unique labels in group
         self.combo_box = ComboBox(self)
         list_layout.addWidget(self.combo_box)
+        
+        # --- START CHANGES ---
+        # Label for Total Object Count
+        self.total_object_label = QLabel("Total: 0")
+        self.total_object_label.setAlignment(Qt.AlignCenter)
+        # Set large font (20px) and bold
+        self.total_object_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #2E86C1;") 
+        list_layout.addWidget(self.total_object_label)
+        # --- END CHANGES ---
 
         # Create and add a widget for showing current label items
         self.label_list = QListWidget()
@@ -457,7 +466,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.clahe_action.setShortcut("Ctrl+E")
         self.clahe_action.triggered.connect(self.toggle_clahe_mode)
         # --- END CHANGES ---
-        
 
         add_actions(self.menus.file,
                     (open, open_dir, change_save_dir, open_annotation, copy_prev_bounding, self.menus.recentFiles, save, save_format, save_as, close, reset_all, delete_image, quit))
@@ -713,6 +721,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.items_to_shapes.clear()
         self.shapes_to_items.clear()
         self.label_list.clear()
+        
+        # --- START CHANGES ---
+        self.update_object_count()
+        # --- END CHANGES ---
+        
         self.file_path = None
         self.image_data = None
         self.label_file = None
@@ -892,6 +905,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.items_to_shapes[item] = shape
         self.shapes_to_items[shape] = item
         self.label_list.addItem(item)
+        
+        # --- START CHANGES ---
+        self.update_object_count()
+        # --- END CHANGES ---
+        
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
         self.update_combo_box()
@@ -904,6 +922,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_list.takeItem(self.label_list.row(item))
         del self.shapes_to_items[shape]
         del self.items_to_shapes[item]
+        # --- START CHANGES ---
+        self.update_object_count()
+        # --- END CHANGES ---
         self.update_combo_box()
 
     def load_labels(self, shapes):
@@ -1253,6 +1274,14 @@ class MainWindow(QMainWindow, WindowMixin):
     def toggle_clahe_mode(self):
         if self.base_image:
             self.update_displayed_image()
+
+    # --- PASTE THE FUNCTION HERE ---
+    def update_object_count(self):
+        count = len(self.items_to_shapes)
+        # Check if the label exists before updating to avoid errors during init
+        if hasattr(self, 'total_object_label'): 
+            self.total_object_label.setText(f"Total: {count}")
+    # -------------------------------
 
     def update_displayed_image(self):
         """Updates the canvas based on whether CLAHE is active."""
