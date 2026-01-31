@@ -16,7 +16,7 @@ class VideoTaggerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Passenger Speed Tagger Pro")
-        self.root.geometry("1000x750")
+        self.root.geometry("1000x780")
         
         # State Variables
         self.video_path = None
@@ -61,6 +61,10 @@ class VideoTaggerApp:
                                 orient=tk.HORIZONTAL, variable=self.slider_var, command=self.on_slider_move)
         self.slider.pack(fill=tk.X, pady=5)
 
+        # Time Progress Label
+        self.lbl_time_progress = tk.Label(self.control_frame, text="00:00:00 / 00:00:00", font=("Arial", 9), fg="#333333")
+        self.lbl_time_progress.pack(pady=0) 
+
         # Info Labels
         info_frame = tk.Frame(self.control_frame)
         info_frame.pack(fill=tk.X, pady=5)
@@ -88,7 +92,6 @@ class VideoTaggerApp:
         tk.Label(btn_frame, text="  Go to Frame:").pack(side=tk.LEFT)
         self.entry_goto = tk.Entry(btn_frame, width=8)
         self.entry_goto.pack(side=tk.LEFT)
-        # CRITICAL: Bind Enter Key (<Return>) to the function
         self.entry_goto.bind("<Return>", self.goto_frame_event)
         
         tk.Button(btn_frame, text="Go", command=self.goto_frame_event).pack(side=tk.LEFT)
@@ -109,22 +112,28 @@ class VideoTaggerApp:
         self.video_label = tk.Label(self.canvas_frame, bg='black')
         self.video_label.pack(anchor=tk.CENTER, expand=True)
 
-        # Key Bindings
+        # --- Key Bindings ---
         root.bind('<space>', lambda e: self.toggle_pause())
+        
+        # Frame Step (Arrow Keys)
         root.bind('<Left>', lambda e: self.step_frame(-1))
         root.bind('<Right>', lambda e: self.step_frame(1))
+        
+        # 5-Second Jump (Shift + Arrow Keys)
+        root.bind('<Shift-Left>', lambda e: self.skip_seconds(-5))
+        root.bind('<Shift-Right>', lambda e: self.skip_seconds(5))
+        
         root.bind('s', lambda e: self.mark_start())
         root.bind('e', lambda e: self.mark_end())
         root.bind('<F11>', lambda e: self.toggle_fullscreen())
         root.bind('f', lambda e: self.toggle_fullscreen())
-        root.bind('g', lambda e: self.focus_entry()) # 'g' to focus input box
+        root.bind('g', lambda e: self.focus_entry()) 
 
         self.update_ui_loop()
 
     def focus_entry(self):
-        """Focus the input box when 'g' is pressed"""
         self.entry_goto.focus_set()
-        self.entry_goto.select_range(0, tk.END) # Select all text for easy replacement
+        self.entry_goto.select_range(0, tk.END) 
 
     def load_video_dialog(self):
         file_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv")])
@@ -187,6 +196,11 @@ class VideoTaggerApp:
         except ValueError:
             return "Invalid Time"
 
+    def format_seconds(self, seconds):
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return f"{int(h):02d}:{int(m):02d}:{int(s):02d}"
+
     def update_ui_loop(self):
         if self.cap and not self.is_paused and self.cap.isOpened():
             ret, frame = self.cap.read()
@@ -201,8 +215,18 @@ class VideoTaggerApp:
             self.lbl_frame_info.config(text=f"Frame: {self.current_frame_idx} / {self.total_frames}")
             self.lbl_time_info.config(text=f"Time: {t_str}")
             
-            if self.root.focus_get() != self.slider:
-                self.slider_var.set(self.current_frame_idx)
+            if self.fps > 0:
+                cur_sec = self.current_frame_idx / self.fps
+                tot_sec = self.total_frames / self.fps
+                time_prog_str = f"{self.format_seconds(cur_sec)} / {self.format_seconds(tot_sec)}"
+                self.lbl_time_progress.config(text=time_prog_str)
+            
+            # SAFE Focus Check
+            try:
+                if self.root.focus_get() != self.slider:
+                    self.slider_var.set(self.current_frame_idx)
+            except KeyError:
+                pass 
             
             if self.start_frame is not None:
                 self.lbl_status.config(text=f"RECORDING... (Start: {self.start_frame})", fg="red")
@@ -240,16 +264,23 @@ class VideoTaggerApp:
         target = self.current_frame_idx + step
         self.seek_to(target)
 
-    # Added event=None to handle key bindings
+    # --- New Function for 5s Jump ---
+    def skip_seconds(self, seconds):
+        if not self.cap or self.fps == 0: return
+        self.is_paused = True
+        
+        # Calculate how many frames to skip
+        frames_to_skip = int(seconds * self.fps)
+        target = self.current_frame_idx + frames_to_skip
+        self.seek_to(target)
+    # --------------------------------
+
     def goto_frame_event(self, event=None):
         if not self.cap: return
         try:
             target = int(self.entry_goto.get())
             self.is_paused = True
             self.seek_to(target)
-            
-            # CRITICAL: Move focus back to the main window
-            # so 'Space' and 'S/E' keys work immediately after jumping
             self.root.focus() 
         except ValueError:
             pass
