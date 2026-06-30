@@ -460,7 +460,7 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
                 [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
     pose_limb_color = palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
-    pose_kpt_color = palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
+    pose_kpt_color  = palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
     radius = 5
     num_kpts = len(kpts) // steps
 
@@ -489,16 +489,17 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
             continue
         cv2.line(im, pos1, pos2, (int(r), int(g), int(b)), thickness=2)
 
-def analyze_bbox_distribution(labels_dir):
+
+def analyze_bbox_area_distribution(labels_dir, resolution=1000):
     # Find all YOLO format .txt label files
-    # and plot the distribution of bounding box centers as a 2D heatmap
     txt_files = glob.glob(os.path.join(labels_dir, "*.txt"))
     if not txt_files:
         print(f"No .txt files found in {labels_dir}")
         return
 
-    x_centers = []
-    y_centers = []
+    # Initialize a 2D array (heatmap canvas) with zeros
+    heatmap = np.zeros((resolution, resolution))
+    total_boxes = 0
 
     for file_path in txt_files:
         with open(file_path, "r") as f:
@@ -506,29 +507,35 @@ def analyze_bbox_distribution(labels_dir):
                 parts = line.strip().split()
                 if len(parts) >= 5:
                     # YOLO format: class_id x_center y_center width height
-                    x_centers.append(float(parts[1]))
-                    y_centers.append(float(parts[2]))
+                    x_center = float(parts[1])
+                    y_center = float(parts[2])
+                    width = float(parts[3])
+                    height = float(parts[4])
 
-    x_centers = np.array(x_centers)
-    y_centers = np.array(y_centers)
+                    # Convert normalized coordinates to our 1000x1000 grid indices
+                    # max() and min() ensure the box doesn't go out of bounds
+                    xmin = max(0, int((x_center - width / 2) * resolution))
+                    xmax = min(resolution, int((x_center + width / 2) * resolution))
+                    ymin = max(0, int((y_center - height / 2) * resolution))
+                    ymax = min(resolution, int((y_center + height / 2) * resolution))
 
-    print(f"Total bounding boxes analyzed: {len(x_centers)}")
+                    # Add +1 to the entire area covered by the bounding box
+                    if xmin < xmax and ymin < ymax:
+                        heatmap[ymin:ymax, xmin:xmax] += 1
+                        total_boxes += 1
 
-    # Plot 2D Heatmap of Bounding Box Centers
+    print(f"Total bounding boxes analyzed: {total_boxes}")
+
+    # Plot 2D Heatmap Image
     plt.figure(figsize=(8, 8))
-    # Note: In image coordinates, y=0 is top, y=1 is bottom, so we invert the y-axis
-    plt.hist2d(
-        x_centers, y_centers, bins=50, range=[[0, 1], [0, 1]], cmap="inferno"
-    )
-    plt.gca().invert_yaxis()
-    plt.colorbar(label="Box Density")
-    plt.title("Passenger Bounding Box Spatial Distribution")
-    plt.xlabel("Normalized X Center (0 = Left, 1 = Right)")
-    plt.ylabel("Normalized Y Center (0 = Top, 1 = Bottom)")
+    # origin="upper" keeps y=0 at the top, extent maps the axis labels back to 0.0 - 1.0
+    plt.imshow(heatmap, cmap="inferno", origin="upper", extent=[0, 1, 1, 0])
+    plt.colorbar(label="Box Overlap Count (Total Pixels)")
+    plt.title("Passenger Bounding Box Area Distribution")
+    plt.xlabel("Normalized X (0 = Left, 1 = Right)")
+    plt.ylabel("Normalized Y (0 = Top, 1 = Bottom)")
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    plt.show()
 
-
-# # Example usage: replace with your dataset labels path
-# analyze_bbox_distribution("path/to/your/dataset/labels/train")
+    # Save the figure to a file to bypass the FigureCanvasAgg error
+    # plt.show()

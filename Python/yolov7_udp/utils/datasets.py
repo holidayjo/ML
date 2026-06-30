@@ -1316,3 +1316,53 @@ def load_segmentations(self, index):
     #print(key)
     # /work/handsomejw66/coco17/
     return self.segs[key]
+
+
+
+def generate_binary_mask(labels_dir, resolution=1000, save_path="dataset_mask.png"):
+    txt_files = glob.glob(os.path.join(labels_dir, "*.txt"))
+    heatmap = np.zeros((resolution, resolution))
+
+    # 1. Build the heatmap (same as before)
+    for file_path in txt_files:
+        with open(file_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 5:
+                    x_center, y_center = float(parts[1]), float(parts[2])
+                    width, height = float(parts[3]), float(parts[4])
+
+                    xmin = max(0, int((x_center - width / 2) * resolution))
+                    xmax = min(resolution, int((x_center + width / 2) * resolution))
+                    ymin = max(0, int((y_center - height / 2) * resolution))
+                    ymax = min(resolution, int((y_center + height / 2) * resolution))
+
+                    if xmin < xmax and ymin < ymax:
+                        heatmap[ymin:ymax, xmin:xmax] += 1
+
+    # 2. Create the Binary Mask
+    # If heatmap > 0 (passengers exist), set to 255 (White). Else, set to 0 (Black).
+    binary_mask = np.where(heatmap > 0, 255, 0).astype(np.uint8)
+
+    # Save the mask as a standard image file
+    cv2.imwrite(save_path, binary_mask)
+    print(f"Saved precise binary mask to {save_path}")
+
+    
+def apply_mask_to_image(image_path, master_mask_path, output_path):
+    # 1. Load the original image and the master mask
+    img = cv2.imread(image_path)
+    mask = cv2.imread(master_mask_path, cv2.IMREAD_GRAYSCALE)
+
+    # 2. Resize the mask to match the exact dimensions of the image
+    height, width = img.shape[:2]
+    resized_mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
+
+    # 3. Apply the mask (Blacks out the safe-to-remove areas)
+    masked_img = cv2.bitwise_and(img, img, mask=resized_mask)
+
+    # 4. Save (or pass directly to YOLO during inference)
+    cv2.imwrite(output_path, masked_img)
+
+    # Example: Pre-processing a training image
+    # apply_mask_to_image("dataset/images/train/img1.jpg", "dataset_mask.png", "dataset/images/train_masked/img1.jpg")
