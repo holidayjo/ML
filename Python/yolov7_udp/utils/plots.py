@@ -82,7 +82,8 @@ def plot_one_box_PIL(box, img, color=None, label=None, line_thickness=None):
     return np.asarray(img)
 
 
-def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
+def plot_wh_methods():  
+    # from utils.plots import *; plot_wh_methods()
     # Compares the two methods for width-height anchor multiplication
     # https://github.com/ultralytics/yolov3/issues/168
     x = np.arange(-4.0, 4.0, .1)
@@ -487,3 +488,47 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
         if pos2[0] % 640 == 0 or pos2[1] % 640 == 0 or pos2[0]<0 or pos2[1]<0:
             continue
         cv2.line(im, pos1, pos2, (int(r), int(g), int(b)), thickness=2)
+
+def analyze_bbox_distribution(labels_dir):
+    # Find all YOLO format .txt label files
+    # and plot the distribution of bounding box centers as a 2D heatmap
+    txt_files = glob.glob(os.path.join(labels_dir, "*.txt"))
+    if not txt_files:
+        print(f"No .txt files found in {labels_dir}")
+        return
+
+    x_centers = []
+    y_centers = []
+
+    for file_path in txt_files:
+        with open(file_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 5:
+                    # YOLO format: class_id x_center y_center width height
+                    x_centers.append(float(parts[1]))
+                    y_centers.append(float(parts[2]))
+
+    x_centers = np.array(x_centers)
+    y_centers = np.array(y_centers)
+
+    print(f"Total bounding boxes analyzed: {len(x_centers)}")
+
+    # Plot 2D Heatmap of Bounding Box Centers
+    plt.figure(figsize=(8, 8))
+    # Note: In image coordinates, y=0 is top, y=1 is bottom, so we invert the y-axis
+    plt.hist2d(
+        x_centers, y_centers, bins=50, range=[[0, 1], [0, 1]], cmap="inferno"
+    )
+    plt.gca().invert_yaxis()
+    plt.colorbar(label="Box Density")
+    plt.title("Passenger Bounding Box Spatial Distribution")
+    plt.xlabel("Normalized X Center (0 = Left, 1 = Right)")
+    plt.ylabel("Normalized Y Center (0 = Top, 1 = Bottom)")
+    plt.grid(alpha=0.2)
+    plt.tight_layout()
+    plt.show()
+
+
+# # Example usage: replace with your dataset labels path
+# analyze_bbox_distribution("path/to/your/dataset/labels/train")
